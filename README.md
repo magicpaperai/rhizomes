@@ -1,13 +1,9 @@
 # ribbons
 
-Implementation of a `Ribbon` type in Haskell.
+Implementation of `Ribbon` and `RibbonSet` types in Haskell.
 
 A `Ribbon` consists of an origin and destination `Interval`, where `Intervals`
 have a basis, a start integer, and an end integer. The basis is any type `a`
-deriving `Eq`.
+deriving `Eq`. A `RibbonSet` consists of a list of `Ribbons`.
 
-The primary purpose of this project was to implement the following function.
-
-```haskell
-compose :: [Ribbon a] -> [Ribbon a] -> [Ribbon a]
-```
+In this project a `monoid` is defined on the type `RibbonSet`.

@@ -6,7 +6,15 @@ import Data.List (partition)
 data Interval a where
   Interval :: Eq a => a -> Integer -> Integer -> Interval a
 deriving instance Show a => Show (Interval a)
-data Ribbon a = Ribbon (Interval a) (Interval a) deriving Show
+deriving instance Eq a => Eq (Interval a)
+
+data Ribbon a where
+  Ribbon :: Eq a => Interval a -> Interval a -> Ribbon a
+deriving instance Show a => Show (Ribbon a)
+
+data RibbonSet a where
+  RibbonSet :: Eq a => [Ribbon a] -> RibbonSet a
+deriving instance Show a => Show (RibbonSet a)
 
 intersect :: Interval a -> Interval a -> [Interval a]
 intersect (Interval basis start end) (Interval otherBasis cropStart cropEnd)
@@ -56,9 +64,9 @@ over ribbon@(Ribbon origin dest) interval
         precontinued = map (translateI (invert ribbon)) continued
         terminal = diffN interval precontinued
 
-compose2 :: Ribbon a -> Ribbon a -> [Ribbon a]
-compose2 a@(Ribbon _ destA) b@(Ribbon _ destB)
-  = terminalRibbons ++ continuedRibbons
+compose :: Ribbon a -> Ribbon a -> RibbonSet a
+compose a@(Ribbon _ destA) b@(Ribbon _ destB)
+  = RibbonSet $ terminalRibbons ++ continuedRibbons
   where translated = over b destA
         (continued, terminal) = partition (sameBasis destB) translated
         reverseB = translateI (invert b)
@@ -66,17 +74,23 @@ compose2 a@(Ribbon _ destA) b@(Ribbon _ destB)
         continuedRibbons = map (\i -> Ribbon (reverseA . reverseB $ i) i) continued
         terminalRibbons =  map (\i -> Ribbon (reverseA i) i) terminal
 
-compose :: [Ribbon a] -> [Ribbon a] -> [Ribbon a]
-compose xs ys
-  = do x <- xs
+instance Semigroup (RibbonSet a) where
+  (RibbonSet []) <> xs = xs
+  xs <> (RibbonSet []) = xs
+  (RibbonSet xs) <> (RibbonSet ys) = RibbonSet $
+    do x <- xs
        y <- ys
-       compose2 x y
+       (RibbonSet xs) <- return $ compose x y
+       xs
+
+instance Eq a => Monoid (RibbonSet a) where
+  mempty = RibbonSet []
 
 main :: IO ()
 main =
   do
     putStrLn . show $ a
     putStrLn . show $ b
-    putStrLn . show $ compose [a] [b]
+    putStrLn . show $ (RibbonSet [a]) <> (RibbonSet [b])
   where a = Ribbon (Interval "a" 10 50) (Interval "b" 100 140)
         b = Ribbon (Interval "b" 130 150) (Interval "c" 200 220)
