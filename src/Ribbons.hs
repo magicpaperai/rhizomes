@@ -55,12 +55,19 @@ sorted xs =
       tagged = map (\(Interval b s e) -> (fromMaybe 0 $ elemIndex b bases, Interval b s e)) xs
   in map snd $ sort tagged
 
+touching :: Eq a => Interval a -> Interval a -> Bool
+touching intA@(Interval _ startA endA) intB@(Interval _ startB endB)
+  | not $ sameBasis intA intB = False
+  | not . isNothing $ intersect intA intB = True
+  | (startA == endB) || (startB == endA) = True
+  | otherwise = False
+
 -- function defined specifically for use in the following normalize function
 -- this is the reducer that will merge overlapping adjacent intervals
 mergeInterval :: Eq a => [Interval a] -> Interval a -> [Interval a]
 mergeInterval [] x = [x]
 mergeInterval (x:xs) y
-  | not $ isNothing (intersect x y) = (Interval basis (min a1 a2) (max b1 b2)):xs
+  | touching x y = (Interval basis (min a1 a2) (max b1 b2)):xs
       where (Interval basis a1 b1, Interval _ a2 b2) = (x, y)
 mergeInterval xs y = y:xs
 
