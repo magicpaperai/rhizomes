@@ -1,8 +1,7 @@
 import Ribbons
 import Test.QuickCheck
 import Data.Maybe (isNothing)
-import Data.List (nub)
-import Debug.Trace
+import Data.Set (fromList)
 
 instance Arbitrary a => Arbitrary (Interval a) where
   arbitrary =
@@ -38,9 +37,9 @@ prop_diff_and_not intA intB p =
 
 prop_normalize_intersection :: Interval Int -> Interval Int -> Bool
 prop_normalize_intersection intA intB =
-  let intersects = not . isNothing $ intersect intA intB
+  let touches = touching intA intB
       IntervalSet normalized = normalize $ IntervalSet [intA, intB]
-  in if intersects then (length normalized) == 1 else (length normalized) == 2
+  in if touches then (length normalized) == 1 else (length normalized) == 2
 
 prop_partial_inverse :: RibbonSet Int -> Int -> Bool
 prop_partial_inverse ribbonSet p =
@@ -48,7 +47,14 @@ prop_partial_inverse ribbonSet p =
       reverses = outputs >>= (\p -> follow p (invert ribbonSet))
   in case reverses of
     [] -> not . and $ map (includes p . domainR) (ribbons ribbonSet)
-    xs -> if elem p xs then True else traceShow (outputs, reverses, p) False
+    xs -> elem p xs
+
+prop_compose_chain :: RibbonSet Int -> RibbonSet Int -> Int -> Bool
+prop_compose_chain rsA rsB p =
+  let shortOutput = follow p rsA
+      longOutput = shortOutput >>= (\p -> follow p rsB)
+      composedOutput = follow p (rsA <> rsB)
+  in (fromList composedOutput) == (fromList longOutput)
 
 main :: IO ()
 main =

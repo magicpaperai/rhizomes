@@ -14,6 +14,7 @@ description:         Please see the README on GitHub at <https://github.com/matt
 dependencies:
 - base >= 4.7 && < 5
 - QuickCheck >= 2.14.2
+- containers >= 0.6
 
 library:
   source-dirs: src

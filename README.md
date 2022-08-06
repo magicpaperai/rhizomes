@@ -1,5 +1,7 @@
 # ribbons
 
+![diagram](diagram.png)
+
 Implementation of `Ribbon` and `RibbonSet` types in Haskell.
 
 A `Ribbon` consists of an origin and destination `Interval`, where `Intervals`
