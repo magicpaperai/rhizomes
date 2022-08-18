@@ -93,7 +93,8 @@ translateI ribbon@(Ribbon origin (Interval dest _ _)) interval@(Interval _ start
           Ribbon domain range = ribbon
 
 -- invert the direction of a RibbonSet, effectively inverting the function
-invert (RibbonSet ribbons) = RibbonSet $ map (\(Ribbon a b) -> Ribbon b a) ribbons
+invertR (Ribbon a b) = Ribbon b a
+invert (RibbonSet ribbons) = RibbonSet $ map invertR ribbons
 
 -- helper function to pull the ribbons out of a RibbonSet
 ribbons :: RibbonSet a -> [Ribbon a]
@@ -126,8 +127,9 @@ domain (RibbonSet ribbons) = normalize . IntervalSet $ map domainR ribbons
 -- the partial Ribbon over an Interval is the original Ribbon with its domain restricted
 partialI :: Eq a => Interval a -> Ribbon a -> Maybe (Ribbon a)
 partialI interval ribbon =
-  let target = translateI ribbon interval
-  in fmap (\dest -> Ribbon interval dest) target
+  do target <- translateI ribbon interval
+     src <- translateI (invertR ribbon) target
+     return $ Ribbon src target
 
 -- the partial RibbonSet over an Interval consists of all Ribbons for that part of the domain
 partial :: Eq a => RibbonSet a -> Interval a -> RibbonSet a
