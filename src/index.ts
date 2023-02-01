@@ -92,7 +92,7 @@ function normalizeIntervals<B extends Basis>(addrs: Interval<B>[]): Interval<B>[
   })
 }
 
-export class Ribbon<B extends Basis> {
+export class Rhizome<B extends Basis> {
   origin: Interval<B>
   dest: Interval<B>
   constructor(origin: Interval<B>, dest: Interval<B>) {
@@ -105,7 +105,7 @@ export class Ribbon<B extends Basis> {
   }
 
   invert() {
-    return new Ribbon(this.dest, this.origin)
+    return new Rhizome(this.dest, this.origin)
   }
 
   translate(point: number): number {
@@ -118,33 +118,33 @@ export class Ribbon<B extends Basis> {
     return extrapolate.intersect(this.dest)
   }
 
-  partialI(addr: Interval<B>): Ribbon<B> {
+  partialI(addr: Interval<B>): Rhizome<B> {
     const translated = this.translateI(addr)
     const untranslated = this.invert().translateI(translated)
-    return translated ? new Ribbon(untranslated, translated) : null
+    return translated ? new Rhizome(untranslated, translated) : null
   }
 }
 
-export class Ribbons<B extends Basis> {
-  ribbons: Ribbon<B>[]
-  constructor(ribbons: Ribbon<B>[]) {
-    this.ribbons = _.compact(ribbons)
+export class Rhizomes<B extends Basis> {
+  rhizomes: Rhizome<B>[]
+  constructor(rhizomes: Rhizome<B>[]) {
+    this.rhizomes = _.compact(rhizomes)
   }
 
   isEmpty(): boolean {
-    return _.isEmpty(this.ribbons)
+    return _.isEmpty(this.rhizomes)
   }
 
   toString(): string {
-    return this.ribbons.map(x => x.toString()).join('\n')
+    return this.rhizomes.map(x => x.toString()).join('\n')
   }
 
-  invert(): Ribbons<B> {
-    return new Ribbons<B>(this.ribbons.map(x => x.invert()))
+  invert(): Rhizomes<B> {
+    return new Rhizomes<B>(this.rhizomes.map(x => x.invert()))
   }
 
   image(addrs: Interval<B>[]): Interval<B>[] {
-    return normalizeIntervals(_.compact(_.flatMap(this.ribbons, link =>
+    return normalizeIntervals(_.compact(_.flatMap(this.rhizomes, link =>
       _.flatMap(addrs, addr => link.translateI(addr))
     )))
   }
@@ -154,33 +154,33 @@ export class Ribbons<B extends Basis> {
   }
 
   domain(): Interval<B>[] {
-    return normalizeIntervals(_.map(this.ribbons, 'origin'))
+    return normalizeIntervals(_.map(this.rhizomes, 'origin'))
   }
 
   range(): Interval<B>[] {
-    return normalizeIntervals(_.map(this.ribbons, 'dest'))
+    return normalizeIntervals(_.map(this.rhizomes, 'dest'))
   }
 
-  partial(addr: Interval<B>): Ribbons<B> {
-    const overlapping = this.ribbons.filter(link => link.origin.intersect(addr))
-    return new Ribbons(overlapping.map(link => link.partialI(addr)))
+  partial(addr: Interval<B>): Rhizomes<B> {
+    const overlapping = this.rhizomes.filter(link => link.origin.intersect(addr))
+    return new Rhizomes(overlapping.map(link => link.partialI(addr)))
   }
 
-  prism(otherRibbons: Ribbons<B>, addr: Interval<B>): Ribbons<B> {
-    const forwardRibbons = this.partial(addr).ribbons
-    const backwardRibbons = otherRibbons.invert().partial(addr).ribbons
-    return new Ribbons(_.flatMap(forwardRibbons, forward =>
-      _.flatMap(backwardRibbons, backward => new Ribbon(backward.dest, forward.dest))
+  prism(otherRhizomes: Rhizomes<B>, addr: Interval<B>): Rhizomes<B> {
+    const forwardRhizomes = this.partial(addr).rhizomes
+    const backwardRhizomes = otherRhizomes.invert().partial(addr).rhizomes
+    return new Rhizomes(_.flatMap(forwardRhizomes, forward =>
+      _.flatMap(backwardRhizomes, backward => new Rhizome(backward.dest, forward.dest))
     ))
   }
 
-  compose(otherRibbons: Ribbons<B>): Ribbons<B> {
-    const longI = otherRibbons.image(this.range())
-    const prelongs = otherRibbons.preimage(longI)
+  compose(otherRhizomes: Rhizomes<B>): Rhizomes<B> {
+    const longI = otherRhizomes.image(this.range())
+    const prelongs = otherRhizomes.preimage(longI)
     const shortI = diffIntervals(this.range(), prelongs)
     const preshorts = this.preimage(shortI)
-    const shorts = _.flatMap(preshorts, addr => this.partial(addr).ribbons)
-    const longs = _.flatMap(prelongs, addr => otherRibbons.prism(this, addr).ribbons)
-    return new Ribbons([...shorts, ...longs])
+    const shorts = _.flatMap(preshorts, addr => this.partial(addr).rhizomes)
+    const longs = _.flatMap(prelongs, addr => otherRhizomes.prism(this, addr).rhizomes)
+    return new Rhizomes([...shorts, ...longs])
   }
 }
