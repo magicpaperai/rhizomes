@@ -92,22 +92,23 @@ function normalizeIntervals<B extends Basis>(addrs: Interval<B>[]): Interval<B>[
   })
 }
 
-export class Rhizome<B extends Basis> {
+type RhizomeKind = 'source' | 'link'
+class Rhizome<B extends Basis> {
   origin: Interval<B>
   dest: Interval<B>
+  kind: RhizomeKind
   constructor(origin: Interval<B>, dest: Interval<B>) {
     this.origin = origin
     this.dest = dest
   }
 
   toString(): string {
-    return [this.origin.toString(), this.dest.toString()].join(' -> ')
+    return this.kind + ': ' + [this.origin.toString(), this.dest.toString()].join(' -> ')
   }
+}
 
-  invert() {
-    return new Rhizome(this.dest, this.origin)
-  }
-
+export class SourceRhizome<B extends Basis> extends Rhizome<B> {
+  kind: RhizomeKind = 'source'
   translate(point: number): number {
     return point - this.origin.start + this.dest.start
   }
@@ -118,34 +119,53 @@ export class Rhizome<B extends Basis> {
     return extrapolate.intersect(this.dest)
   }
 
-  partialI(addr: Interval<B>): Rhizome<B> {
+  partialI(addr: Interval<B>): SourceRhizome<B> {
     const translated = this.translateI(addr)
     const untranslated = this.invert().translateI(translated)
-    return translated ? new Rhizome(untranslated, translated) : null
+    return translated ? new SourceRhizome(untranslated, translated) : null
+  }
+
+  invert() {
+    return new SourceRhizome(this.dest, this.origin)
+  }
+}
+
+export class LinkRhizome<B extends Basis> extends Rhizome<B> {
+  kind: RhizomeKind = 'link'
+
+  partialI(addr: Interval<B>): LinkRhizome<B> {
+    if (!addr.intersect(this.origin)) return null
+    return new LinkRhizome(addr.intersect(this.origin), this.dest)
+  }
+
+  invert() {
+    return new LinkRhizome(this.dest, this.origin)
   }
 }
 
 export class Rhizomes<B extends Basis> {
-  rhizomes: Rhizome<B>[]
-  constructor(rhizomes: Rhizome<B>[]) {
-    this.rhizomes = _.compact(rhizomes)
+  sources: SourceRhizome<B>[]
+  links: LinkRhizome<B>[]
+  constructor(sources: SourceRhizome<B>[], links: LinkRhizome<B>[] = []) {
+    this.sources = _.compact(sources)
+    this.links = _.compact(links)
   }
 
   isEmpty(): boolean {
-    return _.isEmpty(this.rhizomes)
+    return _.isEmpty(this.sources)
   }
 
   toString(): string {
-    return this.rhizomes.map(x => x.toString()).join('\n')
+    return [...this.sources, ...this.links].map(x => x.toString()).join('\n')
   }
 
   invert(): Rhizomes<B> {
-    return new Rhizomes<B>(this.rhizomes.map(x => x.invert()))
+    return new Rhizomes<B>(this.sources.map(x => x.invert()))
   }
 
   image(addrs: Interval<B>[]): Interval<B>[] {
-    return normalizeIntervals(_.compact(_.flatMap(this.rhizomes, link =>
-      _.flatMap(addrs, addr => link.translateI(addr))
+    return normalizeIntervals(_.compact(_.flatMap(this.sources, src =>
+      _.flatMap(addrs, addr => src.translateI(addr))
     )))
   }
 
@@ -154,33 +174,48 @@ export class Rhizomes<B extends Basis> {
   }
 
   domain(): Interval<B>[] {
-    return normalizeIntervals(_.map(this.rhizomes, 'origin'))
+    return normalizeIntervals(_.map(this.sources, 'origin'))
   }
 
   range(): Interval<B>[] {
-    return normalizeIntervals(_.map(this.rhizomes, 'dest'))
+    return normalizeIntervals(_.map(this.sources, 'dest'))
   }
 
   partial(addr: Interval<B>): Rhizomes<B> {
-    const overlapping = this.rhizomes.filter(link => link.origin.intersect(addr))
-    return new Rhizomes(overlapping.map(link => link.partialI(addr)))
+    const overlapping = this.sources.filter(src => src.origin.intersect(addr))
+    return new Rhizomes(overlapping.map(src => src.partialI(addr)), this.links)
+  }
+
+  partialLinks(addr: Interval<B>): Rhizomes<B> {
+    const overlapping = this.links.filter(link => link.origin.intersect(addr))
+    return new Rhizomes(this.sources, overlapping.map(link => link.partialI(addr)))
   }
 
   prism(otherRhizomes: Rhizomes<B>, addr: Interval<B>): Rhizomes<B> {
-    const forwardRhizomes = this.partial(addr).rhizomes
-    const backwardRhizomes = otherRhizomes.invert().partial(addr).rhizomes
+    const forwardRhizomes = this.partial(addr).sources
+    const backwardRhizomes = otherRhizomes.invert().partial(addr).sources
     return new Rhizomes(_.flatMap(forwardRhizomes, forward =>
-      _.flatMap(backwardRhizomes, backward => new Rhizome(backward.dest, forward.dest))
+      _.flatMap(backwardRhizomes, backward => new SourceRhizome(backward.dest, forward.dest))
     ))
   }
 
   compose(otherRhizomes: Rhizomes<B>): Rhizomes<B> {
-    const longI = otherRhizomes.image(this.range())
+    const range = this.range()
+    const longI = otherRhizomes.image(range)
     const prelongs = otherRhizomes.preimage(longI)
     const shortI = diffIntervals(this.range(), prelongs)
     const preshorts = this.preimage(shortI)
-    const shorts = _.flatMap(preshorts, addr => this.partial(addr).rhizomes)
-    const longs = _.flatMap(prelongs, addr => otherRhizomes.prism(this, addr).rhizomes)
-    return new Rhizomes([...shorts, ...longs])
+    const shorts = _.flatMap(preshorts, addr => this.partial(addr).sources)
+    const longs = _.flatMap(prelongs, addr => otherRhizomes.prism(this, addr).sources)
+
+    const linksOut = _.flatMap(range, addr => otherRhizomes.partialLinks(addr).links)
+    const indirectLinks = _.flatMap(linksOut, link => this.preimage([link.origin]).map(pre => new LinkRhizome(pre, link.dest)))
+    return new Rhizomes(
+      [...shorts, ...longs],
+      [
+        ...this.links, // direct links preserved
+        ...indirectLinks, // indirect links added
+      ]
+    )
   }
 }
