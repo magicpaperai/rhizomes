@@ -59,4 +59,26 @@ describe('Rhizomes#compose', () => {
       'link: a:0-1 -> c:0-10',
     ].join('\n'))
   })
+
+  test('link rhizomes are preserved under composition', () => {
+    const srcab = new SourceRhizome(
+      new Interval(a, 0, 5),
+      new Interval(b, 5, 10)
+    )
+    const linkab = new LinkRhizome(
+      new Interval(a, 0, 5),
+      new Interval(b, 5, 10)
+    )
+    const srcbc = new SourceRhizome(
+      new Interval(b, 0, 10),
+      new Interval(c, 10, 20)
+    )
+    const abs = new Rhizomes([srcab], [linkab])
+    const bcs = new Rhizomes([srcbc])
+    const composed = abs.compose(bcs).toString()
+    expect(composed).toBe([
+      'source: a:0-5 -> c:15-20',
+      'link: a:0-5 -> b:5-10',
+    ].join('\n'))
+  })
 })
