@@ -2,7 +2,7 @@ import _ from 'lodash'
 
 export interface Basis {
   id: string
-  readRange(start: number, end: number): string
+  readRange(start: number, end: number): string[]
 }
 
 export class Interval<B extends Basis> {
@@ -15,7 +15,7 @@ export class Interval<B extends Basis> {
     this.end = end
   }
 
-  read(): string {
+  read(): string[] {
     return this.basis.readRange(this.start, this.end)
   }
 

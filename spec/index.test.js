@@ -5,7 +5,7 @@ class SimpleBasis {
     this.id = id
   }
   readRange(start, end) {
-    return ''
+    return ['']
   }
 }
 
