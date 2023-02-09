@@ -74,7 +74,7 @@ function sortIntervals<B extends Basis>(addrs: Interval<B>[]): Interval<B>[] {
   return _.orderBy(addrs, [x => bases.indexOf(x.basis), 'start'], ['asc', 'asc'])
 }
 
-function normalizeIntervals<B extends Basis>(addrs: Interval<B>[]): Interval<B>[] {
+export function normalizeIntervals<B extends Basis>(addrs: Interval<B>[]): Interval<B>[] {
   let grouped = new Map<B, Interval<B>[]>()
   const sorted = sortIntervals(addrs)
   sorted.forEach(addr => {
