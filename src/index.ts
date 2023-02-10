@@ -194,9 +194,20 @@ export class Rhizomes<B extends Basis> {
   prism(otherRhizomes: Rhizomes<B>, addr: Interval<B>): Rhizomes<B> {
     const forwardRhizomes = this.partial(addr).sources
     const backwardRhizomes = otherRhizomes.invert().partial(addr).sources
-    return new Rhizomes(_.flatMap(forwardRhizomes, forward =>
+    const cartesian = _.flatMap(forwardRhizomes, forward =>
       _.flatMap(backwardRhizomes, backward => new SourceRhizome(backward.dest, forward.dest))
-    ))
+    )
+    return new Rhizomes(_.compact(cartesian.map(rhizome => {
+      const destPreimage = this.preimage([rhizome.dest])
+      const originImage = otherRhizomes.image([rhizome.origin])
+      const pairs = _.flatMap(destPreimage, d => originImage.map(o => [o, d]))
+      const overlap = normalizeIntervals(_.compact(pairs.map(([x, y]) => x.intersect(y))))
+      const overlapDest = this.image(overlap)
+      const overlapOrigin = otherRhizomes.preimage(overlap)
+      if (_.isEmpty(overlapDest) || _.isEmpty(overlapOrigin)) return null
+      // TODO: assuming singleton lists for these may be overly simplistic
+      return new SourceRhizome(overlapOrigin[0], overlapDest[0])
+    })))
   }
 
   compose(otherRhizomes: Rhizomes<B>): Rhizomes<B> {

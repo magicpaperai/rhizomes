@@ -81,4 +81,67 @@ describe('Rhizomes#compose', () => {
       'link: a:0-5 -> b:5-10',
     ].join('\n'))
   })
+
+  test('compose two quote collapse block edits', () => {
+    const ab1 = new SourceRhizome(
+      new Interval(b, 0, 10),
+      new Interval(a, 0, 10)
+    )
+    const ab2 = new SourceRhizome(
+      new Interval(b, 11, 21),
+      new Interval(a, 20, 30)
+    )
+
+    const bc1 = new SourceRhizome(
+      new Interval(c, 0, 10),
+      new Interval(b, 0, 10)
+    )
+    const bc2 = new SourceRhizome(
+      new Interval(c, 10, 11),
+      new Interval(b, 10, 11)
+    )
+    const abs = new Rhizomes([ab1, ab2], [])
+    const bcs = new Rhizomes([bc1, bc2], [])
+    const composed = bcs.compose(abs).toString()
+    expect(composed).toBe([
+      'source: c:10-11 -> b:10-11',
+      'source: c:0-10 -> a:0-10',
+    ].join('\n'))
+  })
+
+  test('compose two quote collapse block edits w extra paragraph', () => {
+    const ab1 = new SourceRhizome(
+      new Interval(b, 0, 10),
+      new Interval(a, 0, 10)
+    )
+    const ab2 = new SourceRhizome(
+      new Interval(b, 10, 20),
+      new Interval(a, 10, 20)
+    )
+    const ab3 = new SourceRhizome(
+      new Interval(b, 21, 31),
+      new Interval(a, 30, 40)
+    )
+
+    const bc1 = new SourceRhizome(
+      new Interval(c, 0, 10),
+      new Interval(b, 0, 10)
+    )
+    const bc2 = new SourceRhizome(
+      new Interval(c, 10, 20),
+      new Interval(b, 10, 20)
+    )
+    const bc3 = new SourceRhizome(
+      new Interval(c, 20, 21),
+      new Interval(b, 20, 21)
+    )
+    const abs = new Rhizomes([ab1, ab2, ab3], [])
+    const bcs = new Rhizomes([bc1, bc2, bc3], [])
+    const composed = bcs.compose(abs, true).toString()
+    expect(composed).toBe([
+      'source: c:20-21 -> b:20-21',
+      'source: c:0-10 -> a:0-10',
+      'source: c:10-20 -> a:10-20',
+    ].join('\n'))
+  })
 })
