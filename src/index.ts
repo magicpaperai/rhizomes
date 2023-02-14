@@ -147,6 +147,12 @@ export class Rhizomes<B extends Basis> {
   sources: SourceRhizome<B>[]
   links: LinkRhizome<B>[]
   constructor(sources: SourceRhizome<B>[], links: LinkRhizome<B>[] = []) {
+    if (sources.some(x => !(x instanceof SourceRhizome))) {
+      throw new Error('sources must be type SourceRhizome')
+    }
+    if (links.some(x => !(x instanceof LinkRhizome))) {
+      throw new Error('links must be type LinkRhizome')
+    }
     this.sources = _.compact(sources)
     this.links = _.compact(links)
   }
