@@ -82,6 +82,54 @@ describe('Rhizomes#compose', () => {
     ].join('\n'))
   })
 
+  test('link rhizomes are preserved under composition, not made one-to-one', () => {
+    // one-to-one here means size of origin range equal to size of dest range
+    // this should be true for all source rhizomes, but not necessary for links
+    const oldLinks = [new LinkRhizome(
+      new Interval(b, 1258, 1261),
+      new Interval(a, 1258, 1760)
+    )]
+    const oldSources = [
+      new SourceRhizome(
+        new Interval(b, 0, 1258),
+        new Interval(a, 0, 1258)
+      ),
+      new SourceRhizome(
+        new Interval(b, 1763, 2312),
+        new Interval(a, 1760, 2309)
+      )
+    ]
+    const newLinks = [new LinkRhizome(
+      new Interval(c, 1261, 1262),
+      new Interval(b, 1261, 1810)
+    )]
+    const newSources = [
+      new SourceRhizome(
+        new Interval(c, 0, 413),
+        new Interval(b, 0, 413)
+      ),
+      new SourceRhizome(
+        new Interval(c, 413, 865),
+        new Interval(b, 413, 865)
+      ),
+      new SourceRhizome(
+        new Interval(c, 865, 1261),
+        new Interval(b, 865, 1261)
+      )
+    ]
+    const newRhizomes = new Rhizomes(newSources, newLinks)
+    const oldRhizomes = new Rhizomes(oldSources, oldLinks)
+    const composed = newRhizomes.compose(oldRhizomes)
+    expect(composed.toString()).toBe([
+      'source: c:1258-1261 -> b:1258-1261',
+      'source: c:0-413 -> a:0-413',
+      'source: c:413-865 -> a:413-865',
+      'source: c:865-1258 -> a:865-1258',
+      'link: c:1261-1262 -> b:1261-1810',
+      'link: c:1258-1261 -> a:1258-1760',
+    ].join('\n'))
+  })
+
   test('compose two quote collapse block edits', () => {
     const ab1 = new SourceRhizome(
       new Interval(b, 0, 10),
