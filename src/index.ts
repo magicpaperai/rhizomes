@@ -62,6 +62,15 @@ export class Interval<B extends Basis> {
   }
 }
 
+export class PageInterval<B extends Basis> {
+  basis: B
+  start = 0
+  end = 1
+  constructor(basis) {
+    this.basis = basis
+  }
+}
+
 function diffIntervals<B extends Basis>(xs: Interval<B>[], ys: Interval<B>[]): Interval<B>[] {
   if (_.isEmpty(xs)) return []
   if (_.isEmpty(ys)) return xs
