@@ -66,6 +66,11 @@ export class PageInterval<B extends Basis> {
   basis: B
   start = 0
   end = 1
+
+  toString() {
+    return this.basis.id
+  }
+
   constructor(basis) {
     this.basis = basis
   }

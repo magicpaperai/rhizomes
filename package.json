@@ -1,7 +1,7 @@
 {
   "name": "rhizomes",
   "author": "Matt Neary <neary.matt@gmail.com>",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "a composable data structure for text ranges",
   "homepage": "https://github.com/magicpaperai/rhizomes",
   "license": "GPLV3",
