@@ -230,6 +230,13 @@ export class Rhizomes<B extends Basis> {
     })))
   }
 
+  intersectSources(otherRhizomes: Rhizomes<B>): Interval<B>[] {
+    const rangeA = this.range()
+    const rangeB = otherRhizomes.range()
+    const diff = diffIntervals(rangeA, rangeB)
+    return diffIntervals(rangeA, diff)
+  }
+
   compose(otherRhizomes: Rhizomes<B>): Rhizomes<B> {
     const range = this.range()
     const longI = otherRhizomes.image(range)
