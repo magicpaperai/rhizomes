@@ -76,7 +76,7 @@ export class PageInterval<B extends Basis> {
   }
 }
 
-function diffIntervals<B extends Basis>(xs: Interval<B>[], ys: Interval<B>[]): Interval<B>[] {
+export function diffIntervals<B extends Basis>(xs: Interval<B>[], ys: Interval<B>[]): Interval<B>[] {
   if (_.isEmpty(xs)) return []
   if (_.isEmpty(ys)) return xs
   if (xs.length === 1) return diffIntervals(xs[0].diff2(ys[0]), _.tail(ys))
